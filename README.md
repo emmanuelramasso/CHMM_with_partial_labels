@@ -1,12 +1,12 @@
-![alt text](.images/header.png)
+![alt text](images/header.png)
 
 This is the implementation of [1], that is a partially hidden Markov model (P-HMM). 
 Partially hidden, partially supervised, weakly hidden, weakly supervised, weak prior, soft labels, noisy labels, uncertain and imprecise labels, etc focus on taking account of a prior on the latent space, here for an HMM. 
 
 The code provided allows to reproduce the results of the paper (see figures below). 
 
-![Effect of noisy labels and uncertain labels during learning](.images/PHMM_figure1.png)
-![Effect of noisy labels and uncertain labels during inference](.images/PHMM_figure2.png)
+![Effect of noisy labels and uncertain labels during learning](images/PHMM_figure1.png)
+![Effect of noisy labels and uncertain labels during inference](images/PHMM_figure2.png)
 
 ## Getting Started
 
