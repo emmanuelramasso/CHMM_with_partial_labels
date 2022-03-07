@@ -141,17 +141,32 @@ for essai=1:nessai
         
     else % init random or make use of prior in pl
         if 1
-            [a b]=kmeans(x,K*M); 
-            mu=reshape(b,[K,d,M]); %    repmat(mu,[1,1,M]);
-            Sigma = zeros(d,d,K*M);
-            mixmat = zeros(K*M,1);
-            for i=1:K*M
-                f=find(a==i);
-                Sigma(:,:,i)=cov(x(f,:)) + 100*eye(d);
-                mixmat(i) = length(f)/T;
+            if 0 % INIT WITH GMM + PL
+                mix = gmm(d, K*M, 'full');
+                options = foptions;
+                max_iter = 5;
+                options(1) = -1; % be quiet!
+                options(14) = max_iter;
+                mix = gmminit(mix, x, options);
+                mix = gmmem_pl(mix, x, repmat(pl,1,M), options);
+                mu = reshape(mix.centres, [K,d,M]);
+                mixmat = mix.priors(:);
+                Sig = mix.covars;
+            else
+                [a, b]=kmeans(x,K*M);
+                mu=reshape(b,[K,d,M]); %    repmat(mu,[1,1,M]);
+                Sigma = zeros(d,d,K*M);
+                mixmat = zeros(K*M,1);
+                for i=1:K*M
+                    f=find(a==i);
+                    Sigma(:,:,i)=cov(x(f,:)) + 100*eye(d);
+                    Sigma(:,:,i) = (Sigma(:,:,i) + Sigma(:,:,i)')/2;
+                    mixmat(i) = length(f)/T;
+                end
+                for i=1:size(Sigma,3), assert(isposdef(Sigma(:,:,i))); end
+                mixmat = reshape(mixmat,[K,M]);
+                Sig = reshape(Sigma,[d,d,K,M]);
             end
-            mixmat = reshape(mixmat,[K,M]);
-            Sig = reshape(Sigma,[d,d,K,M]);
         else
             mu=x(randsample(T,K*M),:);
             mu=reshape(mu,[K,d,M]); %    repmat(mu,[1,1,M]);
@@ -258,8 +273,8 @@ for essai=1:nessai
              
         catch ME
             
-            disp(ME)            
-            disp('Problem in convergence (possibly nothing, let me continue...)')
+            ME           
+            disp('Problem in convergence (possibly too many clusters ? or nothing, let me continue...)')
             err = true; 
             go_on = false;
             
@@ -291,8 +306,12 @@ end
 
 
 % Set outputs
-
-[p, p2] = computeB(x, muf, Sigf, mixmatf, K, M, T);
+try
+    [p, p2] = computeB(x, muf, Sigf, mixmatf, K, M, T);
+catch ME
+    disp(ME)
+    error('Unable to converge')
+end
 if M>1
     [alpha, beta, gamma, loglik, xi, ~, gamma2] = fwdback_phmm_mix(Pif, Af, p, pl, p2, mixmatf);
 elseif M==1
